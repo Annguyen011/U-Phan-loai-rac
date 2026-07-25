@@ -1,0 +1,15 @@
+# YOLOv11 Dataset Config
+# Đường dẫn dataset (bỏ ảnh vào các thư mục dưới)
+path: ./dataset
+
+# Train/Val paths
+train: images/train
+val: images/train
+
+# Classes = 4
+nc: 4
+names:
+  0: nhua
+  1: kim_loai
+  2: giay
+  3: khong_phai_rac
