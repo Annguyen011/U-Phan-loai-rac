@@ -5,7 +5,7 @@ Chạy trên Raspberry Pi 4, phát kết quả qua mạng cho laptop xem
 
 import sys, os, time, asyncio, json, base64, cv2, numpy as np
 from pathlib import Path
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, UploadFile, File
 from fastapi.responses import HTMLResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 import uvicorn
@@ -245,6 +245,55 @@ connect();
 @app.get("/")
 async def index():
     return HTMLResponse(content=HTML_PAGE)
+
+
+@app.post("/upload")
+async def upload_image(file: UploadFile = File(...)):
+    """Upload ảnh để phân loại (không cần webcam)"""
+    import shutil
+    os.makedirs("uploads", exist_ok=True)
+    
+    # Lưu ảnh tạm
+    file_path = f"uploads/{int(time.time())}_{file.filename}"
+    with open(file_path, "wb") as f:
+        shutil.copyfileobj(file.file, f)
+    
+    # Đọc ảnh
+    frame = cv2.imread(file_path)
+    if frame is None:
+        return {"error": "Không đọc được ảnh"}
+    
+    # Resize
+    h, w = frame.shape[:2]
+    scale = min(640 / w, 480 / h, 1.0)
+    if scale < 1.0:
+        frame = cv2.resize(frame, (int(w * scale), int(h * scale)))
+    
+    # YOLO Inference
+    results = yolo_model(frame, verbose=False, conf=0.25, iou=0.45)
+    
+    detections = []
+    if len(results[0].boxes) > 0:
+        for box in results[0].boxes:
+            cls_id = int(box.cls[0])
+            conf = float(box.conf[0])
+            xyxy = box.xyxy[0].tolist()
+            label = CLASS_NAMES[cls_id] if cls_id < len(CLASS_NAMES) else "unknown"
+            detections.append({
+                "label": label,
+                "confidence": round(conf, 4),
+                "bbox": [round(x, 1) for x in xyxy]
+            })
+    
+    # Encode ảnh kết quả
+    _, buffer = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, 70])
+    img_b64 = base64.b64encode(buffer).decode()
+    
+    return {
+        "image": img_b64,
+        "detections": detections,
+        "count": len(detections)
+    }
 
 
 @app.websocket("/ws")
