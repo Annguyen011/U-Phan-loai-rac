@@ -27,7 +27,7 @@ sudo apt install -y python3-opencv libopencv-dev
 # Cài các thư viện Python cần thiết
 echo "[4/5] Cai thu vien Python..."
 pip3 install --user numpy pillow 2>/dev/null
-pip3 install --user PyQt6 ultralytics 2>/dev/null
+pip3 install --user ultralytics fastapi uvicorn websockets python-multipart 2>/dev/null
 
 # Kiểm tra webcam
 echo "[5/5] Kiem tra webcam USB..."
