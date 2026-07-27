@@ -46,33 +46,17 @@ cap = None
 
 def init_camera():
     global cap
-    
-    # Thử tất cả camera index + backend
-    backends = [
-        (cv2.CAP_V4L2, "V4L2"),
-        (cv2.CAP_ANY, "ANY"),
-        (cv2.CAP_FFMPEG, "FFMPEG"),
-    ]
-    
-    for backend, name in backends:
-        for cid in range(20):
-            try:
-                cam = cv2.VideoCapture(cid, backend)
-                if cam.isOpened():
-                    # Thử đọc frame
-                    ret, _ = cam.read()
-                    if ret:
-                        cap = cam
-                        w = int(cam.get(cv2.CAP_PROP_FRAME_WIDTH))
-                        h = int(cam.get(cv2.CAP_PROP_FRAME_HEIGHT))
-                        print(f"[CAM] ✅ Camera {cid} OK ({name} backend, {w}x{h})")
-                        return cid
-                    cam.release()
-            except Exception:
-                pass
-    
-    print("[CAM] ❌ KHÔNG TÌM THẤY CAMERA NÀO!")
-    return -1
+    # Dùng V4L2 backend (giống camera_test.py - ĐÃ TEST THÀNH CÔNG)
+    cap = cv2.VideoCapture(0, cv2.CAP_V4L2)
+    if cap.isOpened():
+        cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
+        cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
+        cap.set(cv2.CAP_PROP_FPS, 30)
+        print(f"[CAM] ✅ Camera 0 OK (V4L2, 640x480)")
+        return 0
+    else:
+        print("[CAM] ❌ KHONG MO DUOC CAMERA 0!")
+        return -1
 
 
 # ============================================================
