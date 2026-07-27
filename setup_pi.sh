@@ -44,15 +44,15 @@ echo "   ✅ Da xoa PyQt (neu co)"
 # 5. CÀI THƯ VIỆN PYTHON (CHUẨN BỊ TRƯỚC)
 # ==================================================================
 echo "[5/6] Cai numpy, pillow..."
-sudo pip3 install --upgrade pip 2>/dev/null || true
-sudo pip3 install numpy pillow 2>/dev/null || true
+sudo pip3 install --break-system-packages --upgrade pip 2>/dev/null || true
+sudo pip3 install --break-system-packages numpy pillow 2>/dev/null || true
 
 # ==================================================================
 # 6. CÀI YOLO + WEB SERVER
 # ==================================================================
 echo "[6/6] Cai YOLOv11 + FastAPI + WebSocket..."
-sudo pip3 install ultralytics 2>/dev/null || true
-sudo pip3 install fastapi uvicorn websockets python-multipart jinja2 2>/dev/null || true
+sudo pip3 install --break-system-packages ultralytics 2>/dev/null || true
+sudo pip3 install --break-system-packages fastapi uvicorn websockets python-multipart jinja2 2>/dev/null || true
 
 # ==================================================================
 # 7. KIỂM TRA TẤT CẢ

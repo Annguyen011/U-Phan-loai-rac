@@ -197,13 +197,20 @@ def train_model():
         project="models",
     )
     
-    # Save best model vào OUTPUT_MODEL
+    # Save best model vào OUTPUT_MODEL (xóa file cũ trước)
     best_path = Path("models/yolo_waste/weights/best.pt")
+    save_path = Path(OUTPUT_MODEL)
+    
+    # Xóa model cũ nếu có
+    if save_path.exists():
+        save_path.unlink()
+        print(f"\n🗑️  Đã xóa model cũ: {OUTPUT_MODEL}")
+    
     if best_path.exists():
         os.makedirs("models", exist_ok=True)
         import shutil
         shutil.copy(str(best_path), OUTPUT_MODEL)
-        print(f"\n✅ Model đã lưu vào: {OUTPUT_MODEL}")
+        print(f"✅ Model mới đã lưu vào: {OUTPUT_MODEL}")
         print(f"   Kích thước: {os.path.getsize(OUTPUT_MODEL) / (1024*1024):.1f} MB")
     else:
         # Fallback: tìm last.pt
@@ -211,7 +218,16 @@ def train_model():
         if last_path.exists():
             import shutil
             shutil.copy(str(last_path), OUTPUT_MODEL)
-            print(f"\n✅ Model đã lưu vào: {OUTPUT_MODEL} (last epoch)")
+            print(f"\n✅ Model mới đã lưu vào: {OUTPUT_MODEL} (last epoch)")
+        else:
+            print(f"\n⚠️  KHÔNG TÌM THẤY model đã train! Giữ lại model cũ.")
+    
+    # Xóa thư mục train tạm để tiết kiệm dung lượng
+    train_dir = Path("models/yolo_waste")
+    if train_dir.exists():
+        import shutil
+        shutil.rmtree(str(train_dir), ignore_errors=True)
+        print(f"🗑️  Đã xóa thư mục train tạm: models/yolo_waste")
     
     # Validate
     print("\n📊 Đánh giá model...")
@@ -259,6 +275,8 @@ def export_model():
 # MAIN
 # ================================================================
 def main():
+    global EPOCHS  # Phải đặt global TRƯỚC khi dùng EPOCHS
+    
     import argparse
     
     parser = argparse.ArgumentParser(description="YOLOv11 Nano Training")
@@ -274,7 +292,6 @@ def main():
     if not any([args.auto_label, args.train, args.export, args.all]):
         args.all = True
     
-    global EPOCHS
     EPOCHS = args.epochs
     
     # 1. Auto-label
