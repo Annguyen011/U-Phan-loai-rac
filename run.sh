@@ -15,8 +15,12 @@ if [ -n "$PID" ]; then
     echo "🔧 Da giai phong port 8080"
 fi
 
-# Kiểm tra model
-if [ ! -f "models/yolo_best.pt" ]; then
+# Kiểm tra model - CHỈ TRAIN NẾU CHƯA CÓ, NẾU CÓ RỒI THÌ DÙNG LUÔN
+if [ -f "models/yolo_best.pt" ]; then
+    echo "✅ Model da co san, dung luon!"
+elif [ -f "yolo11n.pt" ]; then
+    echo "⚠️  Dang dung pretrained model. Hay train: python3 train_yolo.py"
+else
     echo "⚠️  Chua co model, dang train..."
     python3 train_yolo.py
 fi
