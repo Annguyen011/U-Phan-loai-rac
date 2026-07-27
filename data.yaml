@@ -1,12 +1,9 @@
 # YOLOv11 Dataset Config
-# Đường dẫn dataset (bỏ ảnh vào các thư mục dưới)
-path: ./dataset
+path: /home/pi/phan_loai_rac/U-Phan-loai-rac/dataset
 
-# Train/Val paths
 train: images/train
 val: images/train
 
-# Classes = 4
 nc: 4
 names:
   0: nhua
