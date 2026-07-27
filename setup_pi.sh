@@ -1,87 +1,94 @@
 #!/bin/bash
 # =============================================================================
-# SETUP SCRIPT TOÀN DIỆN CHO RASPBERRY PI 4
+# SETUP SCRIPT TOÀN DIỆN - RASPBERRY PI 4
 # =============================================================================
-# Chạy: chmod +x setup_pi.sh && sudo ./setup_pi.sh
+# Chỉ cần chạy 1 lệnh:   sudo ./setup_pi.sh
+# Tự động làm MỌI THỨ: cài đặt + gỡ PyQt + fix /tmp đầy
 # =============================================================================
-
-# set -e  # Không dừng khi có lỗi nhỏ
 
 echo "============================================"
-echo "  SETUP AI PHAN LOAI RAC - Pi 4 (FULL)"
+echo "  SETUP AI PHAN LOAI RAC - Pi 4 (ALL IN ONE)"
 echo "============================================"
 echo ""
+
+# Fix lỗi /tmp đầy: dọn dẹp + tạo tmp trên home
+echo "[0/8] Don dep /tmp + tao TMPDIR tren home..."
+sudo rm -rf /tmp/pip-* /tmp/*.whl ~/.cache/pip 2>/dev/null || true
+mkdir -p /home/pi/tmp
+export TMPDIR=/home/pi/tmp
+echo "   ✅ TMPDIR=$TMPDIR"
 
 # ==================================================================
 # 1. CẬP NHẬT HỆ THỐNG
 # ==================================================================
-echo "[1/6] Cap nhat he thong..."
+echo "[1/8] Cap nhat he thong..."
 sudo apt update -y && sudo apt upgrade -y
 
 # ==================================================================
-# 2. CÀI PYTHON + PIP + TOOLS CƠ BẢN
+# 2. CÀI PYTHON + PIP + TOOLS
 # ==================================================================
-echo "[2/6] Cai Python3 + pip + tools..."
+echo "[2/8] Cai Python3 + pip + tools..."
 sudo apt install -y python3 python3-pip python3-venv git curl wget lsof avahi-daemon
 
 # ==================================================================
-# 3. CÀI OPENCV + DEV LIBS (BỎ QUA CÁI KHÔNG CÓ)
+# 3. CÀI OPENCV
 # ==================================================================
-echo "[3/6] Cai OpenCV + libs..."
+echo "[3/8] Cai OpenCV..."
 sudo apt install -y python3-opencv libopencv-dev 2>/dev/null || true
 echo "   ✅ OpenCV OK"
 
 # ==================================================================
-# 4. GỠ PYQT NẾU CÓ - WEB KHÔNG CẦN
+# 4. GỠ PYQT (DÙNG --break-system-packages)
 # ==================================================================
-echo "[4/6] Go bo PyQt (neu co)..."
-sudo apt remove -y python3-pyqt5 python3-pyqt5-sip python3-pyqt5.qtsvg 2>/dev/null || true
+echo "[4/8] Go bo PyQt..."
+sudo apt remove -y python3-pyqt5 python3-pyqt5-sip 2>/dev/null || true
 sudo apt autoremove -y 2>/dev/null || true
-sudo pip3 uninstall -y PyQt6 PyQt5 PyQt6-sip QtPy 2>/dev/null || true
-echo "   ✅ Da xoa PyQt (neu co)"
+sudo TMPDIR=$TMPDIR pip3 uninstall --break-system-packages -y PyQt6 PyQt5 PyQt6-sip QtPy 2>/dev/null || true
+echo "   ✅ PyQt da duoc go"
 
 # ==================================================================
-# 5. CÀI THƯ VIỆN PYTHON (CHUẨN BỊ TRƯỚC)
+# 5. CÀI NUMPY + PILLOW
 # ==================================================================
-echo "[5/6] Cai numpy, pillow..."
-sudo pip3 install --break-system-packages --upgrade pip 2>/dev/null || true
-sudo pip3 install --break-system-packages numpy pillow 2>/dev/null || true
+echo "[5/8] Cai numpy, pillow..."
+sudo TMPDIR=$TMPDIR pip3 install --break-system-packages --upgrade pip 2>/dev/null || true
+sudo TMPDIR=$TMPDIR pip3 install --break-system-packages numpy pillow 2>/dev/null || true
 
 # ==================================================================
-# 6. CÀI YOLO + WEB SERVER
+# 6. CÀI YOLOv11
 # ==================================================================
-echo "[6/6] Cai YOLOv11 + FastAPI + WebSocket..."
-sudo pip3 install --break-system-packages ultralytics 2>/dev/null || true
-sudo pip3 install --break-system-packages fastapi uvicorn websockets python-multipart jinja2 2>/dev/null || true
+echo "[6/8] Cai YOLOv11..."
+sudo TMPDIR=$TMPDIR pip3 install --break-system-packages ultralytics 2>/dev/null || true
+echo "   ✅ YOLO OK"
 
 # ==================================================================
-# 7. KIỂM TRA TẤT CẢ
+# 7. CÀI WEB SERVER (FastAPI)
 # ==================================================================
-echo "[7/7] Kiem tra cai dat..."
+echo "[7/8] Cai FastAPI + WebSocket..."
+sudo TMPDIR=$TMPDIR pip3 install --break-system-packages fastapi uvicorn websockets python-multipart jinja2 2>/dev/null || true
+echo "   ✅ FastAPI OK"
+
+# Dọn dẹp
+rm -rf $TMPDIR/pip-* 2>/dev/null || true
+
+# ==================================================================
+# 8. KIỂM TRA TẤT CẢ
+# ==================================================================
+echo "[8/8] Kiem tra..."
 echo ""
 
-# Check Python
 python3 --version && echo "   ✅ Python3 OK"
-
-# Check OpenCV
 python3 -c "import cv2; print('   ✅ OpenCV', cv2.__version__)" 2>/dev/null || echo "   ⚠️  OpenCV chua OK"
-
-# Check YOLO
 python3 -c "from ultralytics import YOLO; print('   ✅ YOLO OK')" 2>/dev/null || echo "   ⚠️  YOLO chua OK"
-
-# Check FastAPI
 python3 -c "from fastapi import FastAPI; print('   ✅ FastAPI OK')" 2>/dev/null || echo "   ⚠️  FastAPI chua OK"
 
-# Check webcam
 echo ""
-echo "📷 Kiem tra webcam USB..."
-ls -la /dev/video* 2>/dev/null && echo "   ✅ Webcam detected!" || echo "   ⚠️  Chua co webcam. Cam USB vao."
+echo "📷 Webcam:"
+ls /dev/video* 2>/dev/null && echo "   ✅ Co thiet bi video!" || echo "   ⚠️  Chua cam webcam USB"
 
-# Check PyQt đã bị xóa chưa
 echo ""
-echo "🔍 Kiem tra PyQt con khong..."
-python3 -c "import PyQt5" 2>/dev/null && echo "   ⚠️  PyQt5 VAN CON! Thu lai: sudo pip3 uninstall PyQt5" || echo "   ✅ PyQt5 da duoc go"
-python3 -c "import PyQt6" 2>/dev/null && echo "   ⚠️  PyQt6 VAN CON! Thu lai: sudo pip3 uninstall PyQt6" || echo "   ✅ PyQt6 da duoc go"
+echo "🔍 PyQt:"
+python3 -c "import PyQt5" 2>/dev/null && echo "   ⚠️  PyQt5 con!" || echo "   ✅ PyQt5 da go"
+python3 -c "import PyQt6" 2>/dev/null && echo "   ⚠️  PyQt6 con!" || echo "   ✅ PyQt6 da go"
 
 echo ""
 echo "============================================"
