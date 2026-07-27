@@ -24,7 +24,17 @@ if not os.path.exists(MODEL_PATH):
 print(f"📥 Đang load YOLO model: {MODEL_PATH}")
 yolo_model = YOLO(MODEL_PATH)
 CLASS_NAMES = list(yolo_model.names.values())
-print(f"   Classes: {CLASS_NAMES}")
+print(f"   Classes ({len(CLASS_NAMES)}): {CLASS_NAMES}")
+
+# Nếu model là pretrained COCO (80 classes), dùng filter class
+OUR_CLASSES = {"nhua", "kim_loai", "giay", "khong_phai_rac"}
+is_pretrained = len(CLASS_NAMES) > 10  # COCO có 80 classes
+
+if is_pretrained:
+    print(f"⚠️  Model là pretrained COCO ({len(CLASS_NAMES)} classes).")
+    print(f"   Server vẫn chạy, nhưng KÉM CHÍNH XÁC.")
+    print(f"   👉 Hãy train model:  python3 train_yolo.py")
+    print(f"   (Cần ảnh trong dataset/images/train/nhua/, kim_loai/, ...)")
 
 app = FastAPI(title="AI Phân Loại Rác")
 os.makedirs("templates", exist_ok=True)
@@ -36,15 +46,32 @@ cap = None
 
 def init_camera():
     global cap
-    for cid in range(6):
-        cam = cv2.VideoCapture(cid)
-        if cam.isOpened():
-            ret, _ = cam.read()
-            if ret:
-                cap = cam
-                print(f"[CAM] ✅ Camera {cid} OK")
-                return cid
-            cam.release()
+    
+    # Thử tất cả camera index + backend
+    backends = [
+        (cv2.CAP_V4L2, "V4L2"),
+        (cv2.CAP_ANY, "ANY"),
+        (cv2.CAP_FFMPEG, "FFMPEG"),
+    ]
+    
+    for backend, name in backends:
+        for cid in range(20):
+            try:
+                cam = cv2.VideoCapture(cid, backend)
+                if cam.isOpened():
+                    # Thử đọc frame
+                    ret, _ = cam.read()
+                    if ret:
+                        cap = cam
+                        w = int(cam.get(cv2.CAP_PROP_FRAME_WIDTH))
+                        h = int(cam.get(cv2.CAP_PROP_FRAME_HEIGHT))
+                        print(f"[CAM] ✅ Camera {cid} OK ({name} backend, {w}x{h})")
+                        return cid
+                    cam.release()
+            except Exception:
+                pass
+    
+    print("[CAM] ❌ KHÔNG TÌM THẤY CAMERA NÀO!")
     return -1
 
 
@@ -325,18 +352,36 @@ async def websocket_endpoint(websocket: WebSocket):
 
 
 if __name__ == "__main__":
+    import socket
+    
     cam_id = init_camera()
-    if cam_id < 0:
-        print("❌ KHÔNG TÌM THẤY WEBCAM! Cắm USB và thử lại.")
-        exit(1)
     
     print(f"\n{'='*60}")
     print(f"🚀 SERVER ĐÃ KHỞI ĐỘNG")
     print(f"{'='*60}")
+    
+    if cam_id < 0:
+        print(f"\n⚠️  CHƯA CÓ WEBCAM USB!")
+        print(f"   Server vẫn chạy, nhưng không có hình ảnh.")
+        print(f"   Hãy cắm webcam USB vào Pi 4 và chạy lại.")
+    else:
+        print(f"   📷 Webcam: /dev/video{cam_id} OK")
+    
+    if is_pretrained:
+        print(f"\n⚠️  MODEL CHƯA ĐƯỢC TRAIN!")
+        print(f"   Đang dùng pretrained COCO (80 classes).")
+        print(f"   👉 Train model:  python3 train_yolo.py")
+    
+    # Lấy IP
+    hostname = socket.gethostname()
+    try:
+        ip = socket.gethostbyname(hostname + ".local")
+    except:
+        ip = "không tìm thấy"
+    
     print(f"\n📱 Mở trình duyệt trên LAPTOP:")
-    print(f"   http://<IP_CUA_PI>:8080")
-    print(f"\n🔍 Tìm IP của Pi 4:")
-    print(f"   hostname -I")
+    print(f"   http://{hostname}.local:8080")
+    print(f"   hoặc http://{ip}:8080")
     print(f"\n{'='*60}\n")
     
     uvicorn.run(app, host="0.0.0.0", port=8080, log_level="warning")
