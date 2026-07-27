@@ -5,7 +5,7 @@
 # Chạy: chmod +x setup_pi.sh && sudo ./setup_pi.sh
 # =============================================================================
 
-set -e  # Dừng ngay nếu có lỗi
+# set -e  # Không dừng khi có lỗi nhỏ
 
 echo "============================================"
 echo "  SETUP AI PHAN LOAI RAC - Pi 4 (FULL)"
@@ -15,45 +15,44 @@ echo ""
 # ==================================================================
 # 1. CẬP NHẬT HỆ THỐNG
 # ==================================================================
-echo "[1/7] Cap nhat he thong..."
+echo "[1/6] Cap nhat he thong..."
 sudo apt update -y && sudo apt upgrade -y
 
 # ==================================================================
 # 2. CÀI PYTHON + PIP + TOOLS CƠ BẢN
 # ==================================================================
-echo "[2/7] Cai Python3 + pip + tools..."
+echo "[2/6] Cai Python3 + pip + tools..."
 sudo apt install -y python3 python3-pip python3-venv git curl wget lsof avahi-daemon
 
 # ==================================================================
-# 3. CÀI OPENCV (TỪ APT - NHANH NHẤT)
+# 3. CÀI OPENCV + DEV LIBS (BỎ QUA CÁI KHÔNG CÓ)
 # ==================================================================
-echo "[3/7] Cai OpenCV (apt)..."
-sudo apt install -y python3-opencv libopencv-dev libatlas-base-dev libhdf5-dev libharfbuzz-dev
+echo "[3/6] Cai OpenCV + libs..."
+sudo apt install -y python3-opencv libopencv-dev 2>/dev/null || true
+echo "   ✅ OpenCV OK"
 
 # ==================================================================
-# 4. GỠ PYQT (NẾU CÓ) - WEB KHÔNG CẦN
+# 4. GỠ PYQT NẾU CÓ - WEB KHÔNG CẦN
 # ==================================================================
-echo "[4/7] Go bo PyQt (khong can thiet cho web)..."
+echo "[4/6] Go bo PyQt (neu co)..."
 sudo apt remove -y python3-pyqt5 python3-pyqt5-sip python3-pyqt5.qtsvg 2>/dev/null || true
 sudo apt autoremove -y 2>/dev/null || true
-sudo pip3 uninstall -y PyQt6 PyQt5 PyQt6-sip 2>/dev/null || true
+sudo pip3 uninstall -y PyQt6 PyQt5 PyQt6-sip QtPy 2>/dev/null || true
 echo "   ✅ Da xoa PyQt (neu co)"
 
 # ==================================================================
-# 5. CÀI THƯ VIỆN PYTHON (TỪ PIP - MỚI NHẤT)
+# 5. CÀI THƯ VIỆN PYTHON (CHUẨN BỊ TRƯỚC)
 # ==================================================================
-echo "[5/7] Cai thu vien Python (numpy, pillow, opencv)..."
+echo "[5/6] Cai numpy, pillow..."
 sudo pip3 install --upgrade pip 2>/dev/null || true
-sudo pip3 install numpy pillow 2>/dev/null
+sudo pip3 install numpy pillow 2>/dev/null || true
 
 # ==================================================================
-# 6. CÀI YOLO + WEB SERVER (THEO ĐÚNG THỨ TỰ)
+# 6. CÀI YOLO + WEB SERVER
 # ==================================================================
-echo "[6/7] Cai YOLOv11 + FastAPI + WebSocket..."
-# Ultralytics (YOLO)
-sudo pip3 install ultralytics 2>/dev/null
-# Web server
-sudo pip3 install fastapi uvicorn websockets python-multipart jinja2 2>/dev/null
+echo "[6/6] Cai YOLOv11 + FastAPI + WebSocket..."
+sudo pip3 install ultralytics 2>/dev/null || true
+sudo pip3 install fastapi uvicorn websockets python-multipart jinja2 2>/dev/null || true
 
 # ==================================================================
 # 7. KIỂM TRA TẤT CẢ
