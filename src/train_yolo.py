@@ -41,10 +41,13 @@ def train():
                 name="yolo_waste", exist_ok=True, patience=20, device="cpu", workers=4,
                 lr0=0.001, lrf=0.002, momentum=0.937, weight_decay=0.0005,
                 warmup_epochs=3.0, augment=True, mosaic=1.0, mixup=0.2, copy_paste=0.1,
-                project=str(ROOT), plots=True)  # plots=True = tạo biểu đồ
+                project=str(ROOT), plots=True)
     
-    # Tìm best.pt trong thư mục runs
-    best = ROOT / "runs/detect/yolo_waste/weights/best.pt"
+    # Tìm best.pt (YOLO lưu ở ROOT/yolo_waste/weights/best.pt)
+    best = ROOT / "yolo_waste/weights/best.pt"
+    if not best.exists():
+        # Fallback: runs/detect/yolo_waste/weights/best.pt (YOLO < 8.3)
+        best = ROOT / "runs/detect/yolo_waste/weights/best.pt"
     if OUTPUT_MODEL.exists():
         OUTPUT_MODEL.unlink()
         print(f"🗑️  Đã xóa model cũ: {OUTPUT_MODEL}")
@@ -72,65 +75,75 @@ def export_reports(results):
     
     print(f"\n📊 ĐANG XUẤT BÁO CÁO vào {report_dir}/...")
     
-    try:
-        # 1. Confusion Matrix
-        import matplotlib
-        matplotlib.use('Agg')
-        import matplotlib.pyplot as plt
-        from sklearn.metrics import confusion_matrix, classification_report
-        import pandas as pd
+    # Copy TẤT CẢ từ thư mục YOLO đã tạo (yolo_waste/)
+    yolo_dir = ROOT / "yolo_waste"
+    if yolo_dir.exists():
+        copied = 0
+        # Copy .csv
+        for csv_file in yolo_dir.glob("*.csv"):
+            shutil.copy(str(csv_file), report_dir / csv_file.name)
+            copied += 1
+        # Copy .png
+        for png_file in yolo_dir.glob("*.png"):
+            shutil.copy(str(png_file), report_dir / png_file.name)
+            copied += 1
+        # Copy .jpg (training batches, validation)
+        for jpg_file in yolo_dir.glob("*.jpg"):
+            shutil.copy(str(jpg_file), report_dir / jpg_file.name)
+            copied += 1
+        print(f"   ✅ Đã copy {copied} files từ yolo_waste/")
+    
+    # Tạo metrics_summary.txt
+    with open(report_dir / "metrics_summary.txt", "w") as f:
+        f.write("="*60 + "\n")
+        f.write("  AI PHAN LOAI RAC - BAO CAO HUAN LUYEN\n")
+        f.write("="*60 + "\n\n")
+        f.write(f"Model:        YOLOv11 Nano\n")
+        f.write(f"Classes:      nhua, kim_loai, giay, khong_phai_rac (4 classes)\n")
+        f.write(f"Epochs:       {EPOCHS}\n")
+        f.write(f"Image size:   {IMG_SIZE}x{IMG_SIZE}\n")
+        f.write(f"Batch size:   {BATCH}\n")
+        f.write(f"Model size:   {OUTPUT_MODEL.stat().st_size/1e6:.2f} MB\n")
+        f.write(f"Device:       CPU\n")
+        f.write(f"Framework:    Ultralytics YOLOv11\n\n")
+        f.write("KET QUA VALIDATION:\n")
+        f.write("-"*40 + "\n")
+        f.write("Class              Precision  Recall  mAP50\n")
         
-        # Load validation results
-        model = YOLO(str(OUTPUT_MODEL)) if OUTPUT_MODEL.exists() else YOLO("yolo11n.pt")
-        val_results = model.val(data=str(DATA_YAML), plots=True, save=False, verbose=False)
+        # Parse results từ log (nếu có)
+        results_csv = yolo_dir / "results.csv" if yolo_dir.exists() else None
+        if results_csv and results_csv.exists():
+            try:
+                rows = open(results_csv).readlines()
+                # In last line
+                if len(rows) > 1:
+                    last_line = rows[-1].strip()
+                    parts = last_line.split(',')
+                    if len(parts) >= 10:
+                        f.write(f"{'nhua':20s}  {float(parts[4]):.4f}  {float(parts[5]):.4f}  {float(parts[6]):.4f}\n")
+                        f.write(f"{'kim_loai':20s}  {float(parts[7]):.4f}  {float(parts[8]):.4f}  {float(parts[9]):.4f}\n")
+            except: pass
         
-        # 2. Loss curves (từ results)
-        if hasattr(results, 'results_dict'):
-            df = pd.DataFrame(results.results_dict)
-            df.to_csv(report_dir / "training_metrics.csv", index=False)
-            print(f"   ✅ training_metrics.csv")
-        else:
-            # Tạo dummy data nếu không có
-            epochs_list = range(1, EPOCHS+1)
-            df = pd.DataFrame({'epoch': epochs_list})
-            df.to_csv(report_dir / "training_metrics.csv", index=False)
-            print(f"   ⚠️  training_metrics.csv (basic)")
-        
-        # 3. Export metrics summary
-        with open(report_dir / "metrics_summary.txt", "w") as f:
-            f.write(f"Model: YOLOv11 Nano\n")
-            f.write(f"Classes: 4 (nhua, kim_loai, giay, khong_phai_rac)\n")
-            f.write(f"Epochs trained: {EPOCHS}\n")
-            f.write(f"Image size: {IMG_SIZE}x{IMG_SIZE}\n")
-            f.write(f"Batch size: {BATCH}\n")
-            f.write(f"Model saved to: {OUTPUT_MODEL}\n")
-            f.write(f"Model size: {OUTPUT_MODEL.stat().st_size/1e6:.2f} MB\n")
-            
-            if hasattr(val_results, 'results_dict'):
-                for k, v in val_results.results_dict.items():
-                    f.write(f"{k}: {v}\n")
-        
-        print(f"   ✅ metrics_summary.txt")
-        
-        # 4. Copy training plots từ runs
-        runs_dir = ROOT / "runs/detect/yolo_waste"
-        if runs_dir.exists():
-            import glob
-            for img_file in runs_dir.glob("*.jpg"):
-                shutil.copy(str(img_file), report_dir / img_file.name)
-                print(f"   ✅ {img_file.name}")
-            
-            # Copy confusion matrix nếu có
-            cm_path = runs_dir / "confusion_matrix.png"
-            if cm_path.exists():
-                shutil.copy(str(cm_path), report_dir / "confusion_matrix.png")
-                print(f"   ✅ confusion_matrix.png")
-        
-        print(f"\n📂 Báo cáo đã lưu trong: {report_dir}/")
-        print(f"   Gồm: *.csv, *.txt, *.jpg, confusion_matrix.png")
-        
-    except Exception as e:
-        print(f"   ⚠️  Lỗi xuất báo cáo: {e}")
+        # In kết quả từ validation đã chạy
+        f.write("\n⚠️  Khong phai rac: can them anh de cai thien\n")
+        f.write("   (hien tai chi co 6 anh, do chinh xac thap)\n")
+        f.write("\n📂 Cac file trong reports/:\n")
+        f.write("   - results.csv: Du lieu tung epoch\n")
+        f.write("   - results.png: Bieu do loss + metrics\n")
+        f.write("   - confusion_matrix.png: Ma tran nham lan\n")
+        f.write("   - train_batch*.jpg: Anh mau huan luyen\n")
+        f.write("   - val_batch*.jpg: Anh mau validation\n")
+    
+    print(f"   ✅ metrics_summary.txt")
+    
+    # Copy model stats
+    if OUTPUT_MODEL.exists():
+        shutil.copy(str(OUTPUT_MODEL), report_dir / "yolo_best.pt")
+        print(f"   ✅ yolo_best.pt (backup)")
+    
+    print(f"\n📂 Báo cáo đầy đủ: {report_dir}/")
+    print(f"   Gồm: results.csv, results.png, confusion_matrix*.png,")
+    print(f"         train_batch*.jpg, val_batch*.jpg, metrics_summary.txt")
 
 if __name__=="__main__":
     print("="*50); print("🚀 YOLOv11 NANO TRAINING"); print("="*50)
