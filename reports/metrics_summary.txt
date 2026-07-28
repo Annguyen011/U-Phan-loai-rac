@@ -7,15 +7,15 @@ Classes:      nhua, kim_loai, giay, khong_phai_rac (4 classes)
 Epochs:       100
 Image size:   320x320
 Batch size:   16
-Model size:   5.43 MB
+Model size:   5.44 MB
 Device:       CPU
 Framework:    Ultralytics YOLOv11
 
 KET QUA VALIDATION:
 ----------------------------------------
 Class              Precision  Recall  mAP50
-nhua                  0.9150  0.9755  0.7296
-kim_loai              0.7842  0.7670  0.1060
+nhua                  0.8539  0.9992  0.9998
+kim_loai              0.9950  0.9950  0.0561
 
 ⚠️  Khong phai rac: can them anh de cai thien
    (hien tai chi co 6 anh, do chinh xac thap)
