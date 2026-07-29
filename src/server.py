@@ -3,17 +3,19 @@ SERVER WEB - AI PHÂN LOẠI RÁC (YOLOv11 NANO + ARDUINO CONTROL)
 Chạy trên Raspberry Pi 4, phát kết quả qua mạng + điều khiển Arduino
 """
 
-import sys, os, time, asyncio, json, base64, cv2, numpy as np, socket, threading
-from pathlib import Path
-
-# === PHẢI ĐẶT TRƯỚC KHI IMPORT NUMPY/ULTRALYTICS ===
-# Fix "Illegal instruction" trên ARM Cortex-A72 (Pi 4)
+# === PHẢI SET ENV TRƯỚC KHI IMPORT BẤT KỲ THƯ VIỆN NÀO ===
+import os, sys
 os.environ.setdefault('OPENBLAS_CORETYPE', 'ARMV8')
 os.environ.setdefault('OPENBLAS_NUM_THREADS', '2')
 os.environ.setdefault('OMP_NUM_THREADS', '2')
 
+# Now safe to import numpy + others
+import time, asyncio, json, base64, socket, threading, io
+import cv2, numpy as np
+from pathlib import Path
+
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, UploadFile, File
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, StreamingResponse
 import uvicorn
 
 ROOT = Path(__file__).parent.parent
