@@ -32,14 +32,26 @@ app = FastAPI(title="AI Phân Loại Rác")
 counter = {"nhua":0,"kim_loai":0,"giay":0,"khong_phai_rac":0}
 cap, arduino = None, None
 
-# === CAMERA ===
+# === CAMERA (quét tất cả index) ===
 def init_camera():
     global cap
-    cap = cv2.VideoCapture(0, cv2.CAP_V4L2)
-    if cap.isOpened():
-        cap.set(cv2.CAP_PROP_FRAME_WIDTH,640)
-        cap.set(cv2.CAP_PROP_FRAME_HEIGHT,480)
-        return 0
+    for cam_id in range(10):
+        cam = cv2.VideoCapture(cam_id, cv2.CAP_V4L2)
+        if not cam.isOpened():
+            cam.release()
+            continue
+        ret, _ = cam.read()
+        if not ret:
+            cam.release()
+            continue
+        cap = cam
+        cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
+        cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
+        w = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+        h = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+        print(f"[CAM] ✅ Camera {cam_id} OK ({w}x{h})")
+        return cam_id
+    print("[CAM] ❌ KHÔNG TÌM THẤY CAMERA NÀO!")
     return -1
 
 # === ARDUINO ===
