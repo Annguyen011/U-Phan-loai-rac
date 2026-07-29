@@ -5,6 +5,14 @@ Chạy trên Raspberry Pi 4, phát kết quả qua mạng + điều khiển Ardu
 
 import sys, os, time, asyncio, json, base64, cv2, numpy as np, socket, threading
 from pathlib import Path
+
+# === PHẢI ĐẶT TRƯỚC KHI IMPORT NUMPY/ULTRALYTICS ===
+# Fix "Illegal instruction" trên ARM Cortex-A72 (Pi 4)
+os.environ.setdefault('OPENBLAS_CORETYPE', 'ARMV8')
+os.environ.setdefault('NPY_DISABLE_CPU_FEATURES', 'ASIMD')
+os.environ.setdefault('OPENBLAS_NUM_THREADS', '2')
+os.environ.setdefault('OMP_NUM_THREADS', '2')
+
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, UploadFile, File
 from fastapi.responses import HTMLResponse
 import uvicorn

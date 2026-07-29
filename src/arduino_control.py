@@ -4,35 +4,72 @@ ARDUINO CONTROL - Raspberry Pi 4 ↔ Arduino Uno via USB Serial
 Gửi lệnh SORT đến Arduino dựa trên kết quả AI phân loại.
 """
 
-import serial, json, time, threading, os
+import serial, json, time, threading, os, glob
 from pathlib import Path
 
 ROOT = Path(__file__).parent.parent
-ARDUINO_PORT = "/dev/ttyACM0"
 BAUD = 115200
 TIMEOUT = 1.0
 
+def find_arduino_ports():
+    """Quét tất cả port có thể là Arduino"""
+    ports = []
+    # Tất cả các port serial phổ biến trên Pi
+    for pattern in ['/dev/ttyACM*', '/dev/ttyUSB*', '/dev/ttyAMA*']:
+        ports.extend(glob.glob(pattern))
+    # Lọc theo port thực tế
+    return sorted(set(ports))
+
 class ArduinoController:
-    def __init__(self, port=ARDUINO_PORT):
+    def __init__(self, port=None):
         self.port = port
         self.ser = None
         self.lock = threading.Lock()
-        self.connect()
+        self.connect(port)
     
-    def connect(self):
-        if not os.path.exists(self.port):
-            print(f"[ARDUINO] ⚠️  Không tìm thấy {self.port}")
+    def connect(self, port=None):
+        """Tìm và kết nối Arduino"""
+        if port:
+            # Nếu port được chỉ định, thử kết nối trực tiếp
+            if self._try_connect(port):
+                return True
+        
+        # Tự động tìm
+        ports = find_arduino_ports()
+        print(f"[ARDUINO] 🔍 Quét {len(ports)} port: {ports}")
+        
+        for p in ports:
+            if self._try_connect(p):
+                return True
+        
+        print(f"[ARDUINO] ⚠️  Không tìm thấy Arduino trong {ports if ports else '/dev/ttyACM*,/dev/ttyUSB*,/dev/ttyAMA*'}")
+        print(f"[ARDUINO] 💡 Kiểm tra: dây USB, quyền truy cập (sudo usermod -aG dialout $USER)")
+        return False
+    
+    def _try_connect(self, port):
+        """Thử kết nối tới 1 port"""
+        if not os.path.exists(port):
             return False
         try:
-            self.ser = serial.Serial(self.port, BAUD, timeout=TIMEOUT)
-            time.sleep(1)  # Arduino reset delay
-            # Boot ack
-            if self.ser.in_waiting:
-                line = self.ser.readline().decode().strip()
-                if line: print(f"[ARDUINO] Boot: {line}")
+            self.ser = serial.Serial(port, BAUD, timeout=TIMEOUT)
+            self.port = port
+            time.sleep(2)  # Arduino reset delay
+            # Đọc boot message
+            boot_msg = ""
+            t0 = time.time()
+            while time.time() - t0 < 1.5:
+                if self.ser.in_waiting:
+                    line = self.ser.readline().decode(errors='ignore').strip()
+                    if line:
+                        boot_msg += line + " | "
+            if boot_msg:
+                print(f"[ARDUINO] ✅ Port {port} - Boot: {boot_msg[:80]}")
+            else:
+                print(f"[ARDUINO] ✅ Port {port} - Kết nối OK (không có boot message)")
             return True
         except Exception as e:
-            print(f"[ARDUINO] ❌ Lỗi kết nối: {e}")
+            print(f"[ARDUINO] ⚠️  Port {port} - Lỗi: {e}")
+            self.ser = None
             return False
     
     def send(self, cmd: dict, wait_ack=True) -> dict:
