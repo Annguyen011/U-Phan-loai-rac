@@ -139,13 +139,36 @@ async def ws_handler(ws: WebSocket):
         _,b=cv2.imencode('.jpg',frame,[cv2.IMWRITE_JPEG_QUALITY,60])
         await ws.send_text(json.dumps({"image":base64.b64encode(b).decode(),"label":label,"label_display":disp,"confidence":round(conf,4),"counter":counter,"fps":round(1.0/max(time.time()-t0,0.001),1)}))
 
+def get_lan_ip():
+    """Lấy IP LAN thực (không phải 127.0.0.1)"""
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(("8.8.8.8", 80))
+        ip = s.getsockname()[0]
+        s.close()
+        return ip
+    except:
+        return socket.gethostbyname(socket.gethostname())
+
+ARDUINO_PORT = "/dev/ttyACM0"
+
+@app.get("/api/arduino")
+async def arduino_status():
+    try:
+        if arduino and arduino.ser and arduino.ser.is_open:
+            stat = arduino.ping()
+            return {"connected": True, "port": ARDUINO_PORT, "status": stat}
+    except: pass
+    return {"connected": False, "port": ARDUINO_PORT}
+
 if __name__ == "__main__":
     init_camera()
-    init_arduino()
-    ip = socket.gethostbyname(socket.gethostname())
+    arduino_ok = init_arduino()
+    ip = get_lan_ip()
     print(f"\n{'='*60}")
     print(f"  🚀  SERVER DA SAN SANG!")
     print(f"  📱  Mo trinh duyet tren LAPTOP:")
     print(f"      👉 http://{ip}:8080")
+    print(f"  🔌 Arduino: {'✅ Connected' if arduino_ok else '❌ Not found'}")
     print(f"{'='*60}\n")
     uvicorn.run(app, host="0.0.0.0", port=8080, log_level="warning")

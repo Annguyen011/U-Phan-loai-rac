@@ -97,6 +97,7 @@ radial-gradient(ellipse at 40% 80%,rgba(0,230,118,.06) 0,transparent 50%)}
 <button class="btn b3" onclick="document.getElementById('fi').click()">📤 Ảnh</button>
 </div>
 <div class="st">AI Edge Computing · Raspberry Pi 4 · YOLOv11 Nano</div>
+<div class="st" id="arduinoStatus" style="margin-top:6px;font-weight:600"></div>
 </div>
 </div>
 
@@ -138,6 +139,8 @@ function rs(){if(ws)ws.send(JSON.stringify({action:'reset'}))}
 function cap(){if(ws)ws.send(JSON.stringify({action:'capture'}))}
 function ps(){paused=!paused;if(ws)ws.send(JSON.stringify({action:'pause',paused}));$('st').textContent=paused?'Đã tạm dừng':'Đã kết nối'}
 function ul(i){if(!i.files||!i.files[0])return;const f=new FormData();f.append('file',i.files[0]);fetch('/upload',{method:'POST',body:f}).then(r=>r.json()).then(d=>{if(d.image)$('v').src='data:image/jpeg;base64,'+d.image;if(d.detections&&d.detections.length){const de=d.detections[0];$('dl').textContent=names[de.label]||de.label;$('dcf').textContent=(de.confidence*100).toFixed(1)+'%';$('di').textContent=icons[de.label]||'🔍';$('dl').style.color=colors[de.label]||'#e4e4f0'}})}
+// Kiểm tra Arduino
+setInterval(()=>{fetch('/api/arduino').then(r=>r.json()).then(d=>{$('arduinoStatus').textContent=d.connected?'🔌 Arduino: ✅ Connected':'🔌 Arduino: ❌ Not found'}).catch(()=>{$('arduinoStatus').textContent=''})},3000);
 conn();
 </script>
 </body>

@@ -23,4 +23,9 @@ echo ""
 echo "🌐 http://$MY_IP:8080"
 echo "🚀 Dang khoi dong..."
 echo ""
+
+# Fix lỗi Illegal instruction trên ARM (Pi 4)
+export OPENBLAS_CORETYPE=ARMV8
+export OMP_NUM_THREADS=4
+
 python3 src/server.py
