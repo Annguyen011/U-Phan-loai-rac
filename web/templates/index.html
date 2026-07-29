@@ -103,19 +103,27 @@ radial-gradient(ellipse at 40% 80%,rgba(0,230,118,.06) 0,transparent 50%)}
 
 <script>
 const $=id=>document.getElementById(id);
-let ws=null,paused=!1;
+let ws=null,paused=!1,reconnectDelay=1000,reconnectTimer=null;
 let icons={nhua:'🥤',kim_loai:'🔩',giay:'📄'};
 let names={nhua:'NHỰA',kim_loai:'KIM LOẠI',giay:'GIẤY'};
 let colors={nhua:'#ff2d78',kim_loai:'#00c6ff',giay:'#00e676'};
+let checkInterval=null;
 
 function conn(){
+if(ws){try{ws.close()}catch(e){}}
+try{
 ws=new WebSocket(`ws://${location.host}/ws`);
-ws.onopen=()=>{$('st').textContent='Đã kết nối'};
+ws.onopen=()=>{
+$('st').textContent='✅ Đã kết nối';
+$('st').style.color='#00e676';
+$('fp').textContent='FPS: --';
+reconnectDelay=1000;
+};
 ws.onmessage=e=>{
 try{
 const d=JSON.parse(e.data);
 if(d.image)$('v').src='data:image/jpeg;base64,'+d.image;
-if(d.fp)$('fp').textContent='FPS:'+d.fps;
+if(d.fps)$('fp').textContent='FPS: '+d.fps;
 if(d.label&&d.label!=='khong_phai_rac'){
 const c=$('dc');c.className='dc';
 if(d.label==='nhua')c.classList.add('n');
@@ -133,14 +141,33 @@ const el=$('cnt_'+k);if(el)el.textContent=d.counter[k];
 }
 }catch(e){}
 };
-ws.onclose=()=>{$('st').textContent='Kết nối lại...';setTimeout(conn,2000)};
+ws.onerror=()=>{};
+ws.onclose=()=>{
+$('st').textContent='⏳ Đang kết nối lại...';
+$('st').style.color='#ff9100';
+if(reconnectTimer)clearTimeout(reconnectTimer);
+reconnectTimer=setTimeout(()=>{
+conn();
+reconnectDelay=Math.min(reconnectDelay*2,10000);
+},reconnectDelay);
+};
+}catch(e){
+if(reconnectTimer)clearTimeout(reconnectTimer);
+reconnectTimer=setTimeout(conn,2000);
 }
-function rs(){if(ws)ws.send(JSON.stringify({action:'reset'}))}
-function cap(){if(ws)ws.send(JSON.stringify({action:'capture'}))}
-function ps(){paused=!paused;if(ws)ws.send(JSON.stringify({action:'pause',paused}));$('st').textContent=paused?'Đã tạm dừng':'Đã kết nối'}
+}
+function rs(){if(ws&&ws.readyState===1)ws.send(JSON.stringify({action:'reset'}))}
+function cap(){if(ws&&ws.readyState===1)ws.send(JSON.stringify({action:'capture'}))}
+function ps(){paused=!paused;if(ws&&ws.readyState===1)ws.send(JSON.stringify({action:'pause',paused}));$('st').textContent=paused?'⏸️ Đã tạm dừng':'✅ Đã kết nối'}
 function ul(i){if(!i.files||!i.files[0])return;const f=new FormData();f.append('file',i.files[0]);fetch('/upload',{method:'POST',body:f}).then(r=>r.json()).then(d=>{if(d.image)$('v').src='data:image/jpeg;base64,'+d.image;if(d.detections&&d.detections.length){const de=d.detections[0];$('dl').textContent=names[de.label]||de.label;$('dcf').textContent=(de.confidence*100).toFixed(1)+'%';$('di').textContent=icons[de.label]||'🔍';$('dl').style.color=colors[de.label]||'#e4e4f0'}})}
 // Kiểm tra Arduino
-setInterval(()=>{fetch('/api/arduino').then(r=>r.json()).then(d=>{$('arduinoStatus').textContent=d.connected?'🔌 Arduino: ✅ Connected':'🔌 Arduino: ❌ Not found'}).catch(()=>{$('arduinoStatus').textContent=''})},3000);
+function checkArduino(){
+fetch('/api/arduino').then(r=>r.json()).then(d=>{
+$('arduinoStatus').textContent=d.connected?'🔌 Arduino: ✅ Connected':'🔌 Arduino: ❌ Not found';
+}).catch(()=>{});
+}
+setInterval(checkArduino,3000);
+checkArduino();
 conn();
 </script>
 </body>

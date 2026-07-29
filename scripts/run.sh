@@ -1,4 +1,4 @@
-#!/bin/bash
+s #!/bin/bash
 cd "$(dirname "$0")/.."
 echo "============================================"
 echo "  AI PHAN LOAI RAC - YOLOv11 NANO"
@@ -13,10 +13,23 @@ elif [ -f "models/yolo11n.pt" ]; then
     echo "⚠️  Dung pretrained. Train: python3 src/train_yolo.py"
 fi
 
-# Test Arduino
-if [ -e /dev/ttyACM0 ]; then
-    echo "🔌 Arduino found at /dev/ttyACM0"
-fi
+# === KIỂM TRA NUMPY TRƯỚC ===
+echo ""
+echo "[CHECK] Kiem tra numpy..."
+python3 -c "
+import numpy as np
+a = np.array([1,2,3])
+print(f'  ✅ NumPy {np.__version__} OK')
+" 2>&1 || {
+    echo "⚠️  NumPy LỖI! Dang fix..."
+    bash scripts/fix_numpy.sh
+}
+
+# === KIỂM TRA ARDUINO + CAMERA ===
+echo ""
+echo "[CHECK] Thiet bi:"
+ls /dev/ttyUSB* /dev/ttyACM* 2>/dev/null && echo "  🔌 Arduino da cam" || echo "  ⚠️  Khong thay Arduino"
+ls /dev/video* 2>/dev/null && echo "  📷 Camera da cam" || echo "  ⚠️  Khong thay Camera"
 
 MY_IP=$(hostname -I 2>/dev/null | awk '{print $1}')
 echo ""
@@ -25,11 +38,11 @@ echo "🚀 Dang khoi dong..."
 echo ""
 
 # Fix lỗi Illegal instruction trên ARM (Pi 4 Cortex-A72)
-# ASIMD là baseline của ARMv8 → KHÔNG thể disable
 export OPENBLAS_CORETYPE=ARMV8
 export OPENBLAS_NUM_THREADS=2
 export OMP_NUM_THREADS=2
 export MKL_NUM_THREADS=2
 export NUMEXPR_NUM_THREADS=2
+
 # Chạy server
 python3 src/server.py 2>&1

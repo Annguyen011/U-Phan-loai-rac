@@ -22,8 +22,13 @@ sys.path.insert(0, '/var/data/python/bin')
 from ultralytics import YOLO
 
 # === Import Arduino Controller ===
-try: from src.arduino_control import ArduinoController
-except: pass
+try:
+    from src.arduino_control import ArduinoController
+    ARDUINO_OK = True
+except Exception as e:
+    print(f"[ARDUINO] ⚠️  Không import được: {e}")
+    ARDUINO_OK = False
+    ArduinoController = None
 
 # === CONFIG ===
 MODEL_PATH = ROOT / "models/yolo_best.pt"
