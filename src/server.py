@@ -131,7 +131,16 @@ async def ws_handler(ws: WebSocket):
         _,b=cv2.imencode('.jpg',frame,[cv2.IMWRITE_JPEG_QUALITY,60])
         await ws.send_text(json.dumps({"image":base64.b64encode(b).decode(),"label":label,"label_display":disp,"confidence":round(conf,4),"counter":counter,"fps":round(1.0/max(time.time()-t0,0.001),1)}))
 
-if __name__=="__main__":
-    init_camera(); init_arduino()
-    print(f"\n{'='*50}\n🚀 SERVER: http://{socket.gethostname()}.local:8080\n{'='*50}\n")
+if __name__ == "__main__":
+    init_camera()
+    init_arduino()
+    host = socket.gethostname()
+    ip = socket.gethostbyname(host)
+    print(f"\n{'='*60}")
+    print(f"  🚀  SERVER DA SAN SANG!")
+    print(f"  📱  Mo trinh duyet tren LAPTOP:")
+    print(f"      👉 http://{ip}:8080")
+    if host != ip:
+        print(f"      👉 http://{host}.local:8080")
+    print(f"{'='*60}\n")
     uvicorn.run(app, host="0.0.0.0", port=8080, log_level="warning")

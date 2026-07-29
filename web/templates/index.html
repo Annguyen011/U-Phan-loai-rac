@@ -2,299 +2,143 @@
 <html lang="vi">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Phân Loại Rác Thải</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>AI Phân Loại Rác Thải</title>
 <style>
-:root {
-  --bg: #0a0a0f;
-  --surface: #12121a;
-  --surface2: #1a1a26;
-  --border: #222233;
-  --text: #e0e0f0;
-  --text2: #8888aa;
-  --plastic: #ff2d78;
-  --metal: #00c6ff;
-  --paper: #00e676;
-  --accent: #7c4dff;
-  --radius: 16px;
-  --shadow: 0 8px 32px rgba(0,0,0,.4);
-}
-* { margin:0; padding:0; box-sizing:border-box; }
-body {
-  font-family: 'Inter',-apple-system,sans-serif;
-  background: var(--bg);
-  color: var(--text);
-  min-height: 100vh;
-  overflow-x: hidden;
-}
-/* ── Background particles ── */
-.bg-particles {
-  position: fixed; inset:0; z-index:0; pointer-events:none;
-  background: radial-gradient(ellipse at 20% 50%, rgba(124,77,255,.08) 0%, transparent 50%),
-              radial-gradient(ellipse at 80% 20%, rgba(0,198,255,.06) 0%, transparent 50%),
-              radial-gradient(ellipse at 50% 80%, rgba(0,230,118,.05) 0%, transparent 50%);
-}
-/* ── Header ── */
-.header {
-  position: relative; z-index:1;
-  text-align:center; padding: 24px 16px 16px;
-  background: var(--surface); border-bottom: 1px solid var(--border);
-}
-.header h1 {
-  font-size: 32px; font-weight: 900;
-  background: linear-gradient(135deg, var(--plastic), var(--accent), var(--metal));
-  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-  letter-spacing: -1px;
-}
-.header .subtitle {
-  font-size: 13px; color: var(--text2); margin-top: 4px;
-  font-weight: 400; letter-spacing: 2px; text-transform: uppercase;
-}
-.header .badge {
-  display: inline-block; margin-top: 8px;
-  padding: 4px 14px; border-radius: 20px;
-  background: var(--surface2); border: 1px solid var(--border);
-  font-size: 11px; color: var(--text2); font-weight: 600;
-}
-/* ── Main layout ── */
-.main {
-  position: relative; z-index:1;
-  display:flex; gap:20px; padding:20px;
-  max-width: 1440px; margin:0 auto; flex-wrap:wrap;
-}
-.video-panel {
-  flex:2; min-width:360px;
-  background: var(--surface); border-radius: var(--radius);
-  border:1px solid var(--border); overflow:hidden;
-  box-shadow: var(--shadow);
-}
-.video-panel video, .video-panel img {
-  width:100%; display:block; border-radius: var(--radius) var(--radius) 0 0;
-}
-.video-stats {
-  display:flex; justify-content:space-between; align-items:center;
-  padding:10px 16px; background: var(--surface2);
-  border-top:1px solid var(--border);
-  font-size:12px; color: var(--text2);
-}
-.live-dot {
-  display:inline-block; width:8px; height:8px; border-radius:50%;
-  background: #00e676; margin-right:6px;
-  animation: pulse 1.5s ease-in-out infinite;
-}
-@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
-/* ── Side panel ── */
-.side-panel {
-  flex:1; min-width:300px;
-  display:flex; flex-direction:column; gap:16px;
-}
-/* ── Detection card ── */
-.detect-card {
-  background: var(--surface); border-radius: var(--radius);
-  border:3px solid var(--border); padding:24px; text-align:center;
-  box-shadow: var(--shadow); transition: border-color .3s;
-}
-.detect-card.active-plastic { border-color: var(--plastic); }
-.detect-card.active-metal   { border-color: var(--metal); }
-.detect-card.active-paper   { border-color: var(--paper); }
-.detect-label {
-  font-size: 56px; font-weight: 900; line-height:1; margin:8px 0;
-  letter-spacing: -2px; transition: color .3s;
-}
-.detect-conf {
-  font-size: 16px; color: var(--text2); font-weight: 500;
-}
-.detect-icon { font-size: 64px; margin-bottom: 4px; }
-/* ── Counter cards ── */
-.counter-grid {
-  display:grid; grid-template-columns: repeat(3, 1fr); gap:12px;
-}
-.counter-card {
-  background: var(--surface); border-radius: var(--radius);
-  padding:18px 12px; text-align:center;
-  border:1px solid var(--border); box-shadow: var(--shadow);
-  transition: transform .2s, border-color .2s;
-}
-.counter-card:hover { transform: translateY(-2px); }
-.counter-card.plastic-card:hover { border-color: var(--plastic); }
-.counter-card.metal-card:hover   { border-color: var(--metal); }
-.counter-card.paper-card:hover   { border-color: var(--paper); }
-.counter-card .c-icon { font-size: 36px; }
-.counter-card .c-count {
-  font-size: 42px; font-weight: 900; margin: 4px 0;
-}
-.counter-card .c-label {
-  font-size: 12px; color: var(--text2); text-transform: uppercase;
-  font-weight: 600; letter-spacing: 1px;
-}
-.c-plastic .c-count { color: var(--plastic); }
-.c-metal   .c-count { color: var(--metal); }
-.c-paper   .c-count { color: var(--paper); }
-/* ── Buttons ── */
-.btn-row { display:flex; gap:8px; flex-wrap:wrap; }
-.btn {
-  flex:1; min-width: 70px;
-  padding: 12px 8px; border:none; border-radius: 12px;
-  font-size: 13px; font-weight: 700; cursor: pointer;
-  color:#fff; background: var(--surface2);
-  border:1px solid var(--border); transition: all .2s;
-  font-family: 'Inter', sans-serif;
-}
-.btn:hover { transform: translateY(-1px); filter: brightness(1.2); }
-.btn-reset { background: linear-gradient(135deg, #ff6d00, #ff9100); }
-.btn-capture { background: linear-gradient(135deg, #2979ff, #00b0ff); }
-.btn-pause { background: linear-gradient(135deg, #ff1744, #ff5252); }
-.btn-upload { background: linear-gradient(135deg, #aa00ff, #7c4dff); }
-/* ── Upload zone ── */
-.upload-zone {
-  border:2px dashed var(--border); border-radius: var(--radius);
-  padding:16px; text-align:center; cursor:pointer;
-  transition: all .3s; background: var(--surface);
-  margin-top: 4px;
-}
-.upload-zone:hover { border-color: var(--accent); background: var(--surface2); }
-.upload-zone p { font-size: 13px; color: var(--text2); }
-.status { text-align:center; font-size: 12px; color: var(--text2); margin-top:4px; }
-/* ── Responsive ── */
-@media (max-width: 768px) {
-  .main { flex-direction: column; padding: 12px; }
-  .video-panel, .side-panel { min-width: auto; }
-  .detect-label { font-size: 40px; }
-  .counter-grid { grid-template-columns: repeat(3, 1fr); }
-}
+:root{--bg:#08080f;--s1:#11111b;--s2:#1a1a28;--b:#252535;--t:#e4e4f0;--t2:#8888aa;--nhua:#ff2d78;--kl:#00c6ff;--giay:#00e676;--acc:#7c4dff;--r:14px;}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--t);min-height:100vh;overflow-x:hidden}
+body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
+background:radial-gradient(ellipse at 30% 20%,rgba(124,77,255,.12) 0,transparent 50%),
+radial-gradient(ellipse at 70% 60%,rgba(0,198,255,.08) 0,transparent 50%),
+radial-gradient(ellipse at 40% 80%,rgba(0,230,118,.06) 0,transparent 50%)}
+/* Header */
+.h{position:relative;z-index:1;text-align:center;padding:18px 12px;background:var(--s1);border-bottom:1px solid var(--b)}
+.h h1{font-size:30px;font-weight:900;letter-spacing:-1px;background:linear-gradient(135deg,var(--nhua),var(--acc),var(--kl));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.h .sub{font-size:11px;color:var(--t2);text-transform:uppercase;letter-spacing:3px;margin-top:3px}
+.h .badge{display:inline-block;margin-top:6px;padding:3px 14px;border-radius:20px;background:var(--s2);border:1px solid var(--b);font-size:10px;color:var(--t2);font-weight:600;letter-spacing:1px}
+/* Main */
+.m{position:relative;z-index:1;display:flex;gap:16px;padding:16px;max-width:1440px;margin:0 auto;flex-wrap:wrap}
+/* Video panel */
+.v{flex:2;min-width:340px;background:var(--s1);border-radius:var(--r);border:1px solid var(--b);overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,.5)}
+.v img{width:100%;display:block;min-height:280px;background:var(--bg)}
+.vs{display:flex;justify-content:space-between;align-items:center;padding:8px 14px;background:var(--s2);border-top:1px solid var(--b);font-size:11px;color:var(--t2)}
+.dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:#00e676;margin-right:5px;animation:pulse 1.5s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+/* Side */
+.s{flex:1;min-width:280px;display:flex;flex-direction:column;gap:14px}
+/* Detect card */
+.dc{background:var(--s1);border-radius:var(--r);border:3px solid var(--b);padding:22px;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,.5);transition:border-color .3s}
+.dc.n{border-color:var(--nhua)}.dc.k{border-color:var(--kl)}.dc.g{border-color:var(--giay)}
+.dc .icon{font-size:56px;margin-bottom:4px}
+.dc .lbl{font-size:52px;font-weight:900;letter-spacing:-2px;line-height:1;margin:6px 0;transition:color .3s}
+.dc .conf{font-size:15px;color:var(--t2);font-weight:500}
+/* Counters */
+.cg{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.cc{background:var(--s1);border-radius:var(--r);padding:16px 10px;text-align:center;border:2px solid transparent;box-shadow:0 4px 16px rgba(0,0,0,.3);transition:all .2s}
+.cc:hover{transform:translateY(-2px)}
+.cc.p:hover{border-color:var(--nhua)}.cc.m:hover{border-color:var(--kl)}.cc.g:hover{border-color:var(--giay)}
+.cc .ci{font-size:30px}
+.cc .cnt{font-size:38px;font-weight:900;margin:3px 0}
+.cc .cn{font-size:11px;color:var(--t2);text-transform:uppercase;font-weight:700;letter-spacing:1px}
+.cp .cnt{color:var(--nhua)}.cm .cnt{color:var(--kl)}.cg2 .cnt{color:var(--giay)}
+/* Buttons */
+.br{display:flex;gap:8px;flex-wrap:wrap}
+.btn{flex:1;min-width:65px;padding:11px 8px;border:none;border-radius:11px;font-size:12px;font-weight:700;cursor:pointer;color:#fff;background:var(--s2);border:1px solid var(--b);transition:all .2s;font-family:inherit}
+.btn:hover{transform:translateY(-1px);filter:brightness(1.15)}
+.b0{background:linear-gradient(135deg,#ff6d00,#ff9100)}.b1{background:linear-gradient(135deg,#2979ff,#00b0ff)}.b2{background:linear-gradient(135deg,#ff1744,#ff5252)}.b3{background:linear-gradient(135deg,#aa00ff,#7c4dff)}
+/* Upload */
+.up{border:2px dashed var(--b);border-radius:var(--r);padding:14px;text-align:center;cursor:pointer;transition:.3s;background:var(--s1);margin-top:4px}
+.up:hover{border-color:var(--acc);background:var(--s2)}
+.up p{font-size:12px;color:var(--t2)}
+.st{text-align:center;font-size:11px;color:var(--t2);margin-top:2px}
+@media(max-width:768px){.m{flex-direction:column;padding:10px}.v,.s{min-width:auto}.dc .lbl{font-size:38px}.cg{grid-template-columns:repeat(3,1fr)}}
+/* Loading animation */
+.loading{text-align:center;padding:40px;color:var(--t2);font-size:18px}
+.loading::after{content:'...';animation:dots 1.5s steps(4,end) infinite}
+@keyframes dots{0%,20%{content:'.'}40%{content:'..'}60%,100%{content:'...'}}
 </style>
 </head>
 <body>
-<div class="bg-particles"></div>
-
-<div class="header">
-  <h1>Phân Loại Rác Thải</h1>
-  <div class="subtitle">YOLOv11 Nano · Raspberry Pi 4 · Edge AI</div>
-  <div class="badge">REAL-TIME OBJECT DETECTION</div>
+<div class="h">
+<h1>Phân Loại Rác Thải</h1>
+<div class="sub">YOLOv11 Nano · Raspberry Pi 4 · Edge AI</div>
+<div class="badge">REAL-TIME DETECTION</div>
 </div>
 
-<div class="main">
-  <!-- VIDEO PANEL -->
-  <div class="video-panel" id="videoPanel">
-    <img id="video" src="" alt="Camera Feed" style="min-height:300px; background:var(--surface2);">
-    <div class="video-stats">
-      <span><span class="live-dot"></span><span id="statusText">Đang kết nối...</span></span>
-      <span id="fps">FPS: --</span>
-    </div>
-    <div class="upload-zone" onclick="document.getElementById('fileInput').click()">
-      <p>📤 Upload ảnh để phân loại (khi webcam không hoạt động)</p>
-      <input type="file" id="fileInput" accept="image/*" style="display:none" onchange="uploadImage(this)">
-    </div>
-  </div>
+<div class="m">
+<div class="v">
+<img id="v" src="" alt="Camera" style="min-height:300px">
+<div class="vs">
+<span><span class="dot"></span><span id="st">Đang kết nối...</span></span>
+<span id="fp">FPS: --</span>
+</div>
+<div class="up" onclick="document.getElementById('fi').click()">
+<p>📤 Upload ảnh để phân loại (khi webcam không hoạt động)</p>
+<input type="file" id="fi" accept="image/*" style="display:none" onchange="ul(this)">
+</div>
+</div>
 
-  <!-- SIDE PANEL -->
-  <div class="side-panel">
-    <!-- Current Detection -->
-    <div class="detect-card" id="detectCard">
-      <div class="detect-icon" id="detectIcon">🔍</div>
-      <div class="detect-label" id="currentLabel">--</div>
-      <div class="detect-conf" id="currentConf">0%</div>
-    </div>
-
-    <!-- Counters (3 items only) -->
-    <div class="counter-grid">
-      <div class="counter-card plastic-card c-plastic">
-        <div class="c-icon">🥤</div>
-        <div class="c-count" id="cnt_nhua">0</div>
-        <div class="c-label">Nhựa</div>
-      </div>
-      <div class="counter-card metal-card c-metal">
-        <div class="c-icon">🔩</div>
-        <div class="c-count" id="cnt_kim_loai">0</div>
-        <div class="c-label">Kim Loại</div>
-      </div>
-      <div class="counter-card paper-card c-paper">
-        <div class="c-icon">📄</div>
-        <div class="c-count" id="cnt_giay">0</div>
-        <div class="c-label">Giấy</div>
-      </div>
-    </div>
-
-    <!-- Action Buttons -->
-    <div class="btn-row">
-      <button class="btn btn-reset" onclick="doReset()">🔄 Reset</button>
-      <button class="btn btn-capture" onclick="doCapture()">📸 Chụp</button>
-      <button class="btn btn-pause" onclick="doPause()">⏯️ Dừng</button>
-      <button class="btn btn-upload" onclick="document.getElementById('fileInput').click()">📤 Ảnh</button>
-    </div>
-
-    <div class="status">AI Edge Computing · Raspberry Pi 4 · YOLOv11 Nano</div>
-  </div>
+<div class="s">
+<div class="dc" id="dc">
+<div class="icon" id="di">🔍</div>
+<div class="lbl" id="dl">SẴN SÀNG</div>
+<div class="conf" id="dcf">0%</div>
+</div>
+<div class="cg">
+<div class="cc cp p"><div class="ci">🥤</div><div class="cnt" id="cnt_nhua">0</div><div class="cn">Nhựa</div></div>
+<div class="cc cm m"><div class="ci">🔩</div><div class="cnt" id="cnt_kim_loai">0</div><div class="cn">Kim Loại</div></div>
+<div class="cc cg2 g"><div class="ci">📄</div><div class="cnt" id="cnt_giay">0</div><div class="cn">Giấy</div></div>
+</div>
+<div class="br">
+<button class="btn b0" onclick="rs()">🔄 Reset</button>
+<button class="btn b1" onclick="cap()">📸 Chụp</button>
+<button class="btn b2" onclick="ps()">⏯️ Dừng</button>
+<button class="btn b3" onclick="document.getElementById('fi').click()">📤 Ảnh</button>
+</div>
+<div class="st">AI Edge Computing · Raspberry Pi 4 · YOLOv11 Nano</div>
+</div>
 </div>
 
 <script>
-const $ = id => document.getElementById(id);
-let ws = null, paused = false, lastLabel = '';
+const $=id=>document.getElementById(id);
+let ws=null,paused=!1;
+let icons={nhua:'🥤',kim_loai:'🔩',giay:'📄'};
+let names={nhua:'NHỰA',kim_loai:'KIM LOẠI',giay:'GIẤY'};
+let colors={nhua:'#ff2d78',kim_loai:'#00c6ff',giay:'#00e676'};
 
-function connect() {
-  ws = new WebSocket(`ws://${location.host}/ws`);
-  ws.onopen = () => { $('statusText').textContent = 'Đã kết nối'; };
-  ws.onmessage = e => {
-    try {
-      const d = JSON.parse(e.data);
-      if (d.image) $('video').src = 'data:image/jpeg;base64,' + d.image;
-      if (d.fps) $('fps').textContent = 'FPS: ' + d.fps;
-
-      if (d.label && d.label !== 'khong_phai_rac') {
-        const card = $('detectCard');
-        card.className = 'detect-card';
-        const colors = {nhua:'plastic',kim_loai:'metal',giay:'paper'};
-        if (colors[d.label]) card.classList.add('active-' + colors[d.label]);
-
-        const icons = {nhua:'🫙',kim_loai:'🔩',giay:'📄'};
-        const names = {nhua:'NHỰA',kim_loai:'KIM LOẠI',giay:'GIẤY'};
-        $('detectIcon').textContent = icons[d.label] || '🔍';
-        $('currentLabel').textContent = names[d.label] || d.label;
-        $('currentConf').textContent = (d.confidence * 100).toFixed(1) + '%';
-        // Color the label
-        const labelColors = {nhua:'#ff2d78',kim_loai:'#00c6ff',giay:'#00e676'};
-        $('currentLabel').style.color = labelColors[d.label] || '#e0e0f0';
-      }
-
-      if (d.counter) {
-        ['nhua','kim_loai','giay'].forEach(k => {
-          const el = $('cnt_' + k);
-          if (el && d.counter[k] !== undefined) el.textContent = d.counter[k];
-        });
-      }
-    } catch(e) {}
-  };
-  ws.onclose = () => { $('statusText').textContent = 'Đang kết nối lại...'; setTimeout(connect, 2000); };
+function conn(){
+ws=new WebSocket(`ws://${location.host}/ws`);
+ws.onopen=()=>{$('st').textContent='Đã kết nối'};
+ws.onmessage=e=>{
+try{
+const d=JSON.parse(e.data);
+if(d.image)$('v').src='data:image/jpeg;base64,'+d.image;
+if(d.fp)$('fp').textContent='FPS:'+d.fps;
+if(d.label&&d.label!=='khong_phai_rac'){
+const c=$('dc');c.className='dc';
+if(d.label==='nhua')c.classList.add('n');
+else if(d.label==='kim_loai')c.classList.add('k');
+else if(d.label==='giay')c.classList.add('g');
+$('di').textContent=icons[d.label]||'🔍';
+$('dl').textContent=names[d.label]||d.label;
+$('dl').style.color=colors[d.label]||'#e4e4f0';
+$('dcf').textContent=(d.confidence*100).toFixed(1)+'%';
 }
-
-function doReset() { if (ws) ws.send(JSON.stringify({action:'reset'})); }
-function doCapture() { if (ws) ws.send(JSON.stringify({action:'capture'})); }
-function doPause() {
-  paused = !paused;
-  if (ws) ws.send(JSON.stringify({action:'pause', paused}));
-  $('statusText').textContent = paused ? 'Đã tạm dừng' : 'Đã kết nối';
+if(d.counter){
+['nhua','kim_loai','giay'].forEach(k=>{
+const el=$('cnt_'+k);if(el)el.textContent=d.counter[k];
+});
 }
-
-function uploadImage(input) {
-  if (!input.files?.[0]) return;
-  const form = new FormData(); form.append('file', input.files[0]);
-  fetch('/upload', {method:'POST', body:form}).then(r => r.json()).then(d => {
-    if (d.image) $('video').src = 'data:image/jpeg;base64,' + d.image;
-    if (d.detections?.length) {
-      const det = d.detections[0];
-      const names = {nhua:'NHỰA',kim_loai:'KIM LOẠI',giay:'GIẤY'};
-      const icons = {nhua:'🫙',kim_loai:'🔩',giay:'📄'};
-      const colors = {nhua:'#ff2d78',kim_loai:'#00c6ff',giay:'#00e676'};
-      $('currentLabel').textContent = names[det.label] || det.label;
-      $('currentConf').textContent = (det.confidence * 100).toFixed(1) + '%';
-      $('detectIcon').textContent = icons[det.label] || '🔍';
-      $('currentLabel').style.color = colors[det.label] || '#e0e0f0';
-    }
-  });
+}catch(e){}
+};
+ws.onclose=()=>{$('st').textContent='Kết nối lại...';setTimeout(conn,2000)};
 }
-
-connect();
+function rs(){if(ws)ws.send(JSON.stringify({action:'reset'}))}
+function cap(){if(ws)ws.send(JSON.stringify({action:'capture'}))}
+function ps(){paused=!paused;if(ws)ws.send(JSON.stringify({action:'pause',paused}));$('st').textContent=paused?'Đã tạm dừng':'Đã kết nối'}
+function ul(i){if(!i.files||!i.files[0])return;const f=new FormData();f.append('file',i.files[0]);fetch('/upload',{method:'POST',body:f}).then(r=>r.json()).then(d=>{if(d.image)$('v').src='data:image/jpeg;base64,'+d.image;if(d.detections&&d.detections.length){const de=d.detections[0];$('dl').textContent=names[de.label]||de.label;$('dcf').textContent=(de.confidence*100).toFixed(1)+'%';$('di').textContent=icons[de.label]||'🔍';$('dl').style.color=colors[de.label]||'#e4e4f0'}})}
+conn();
 </script>
 </body>
 </html>
