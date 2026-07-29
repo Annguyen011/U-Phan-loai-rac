@@ -32,7 +32,7 @@ app = FastAPI(title="AI Phân Loại Rác")
 counter = {"nhua":0,"kim_loai":0,"giay":0,"khong_phai_rac":0}
 cap, arduino = None, None
 
-# === CAMERA (quét tất cả index) ===
+# === CAMERA (quét giống hệt camera_test.py) ===
 def init_camera():
     global cap
     for cam_id in range(10):
@@ -40,16 +40,15 @@ def init_camera():
         if not cam.isOpened():
             cam.release()
             continue
-        ret, _ = cam.read()
-        if not ret:
+        ret, frame = cam.read()
+        if not ret or frame is None or frame.size == 0:
             cam.release()
             continue
         cap = cam
-        cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
-        cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
         w = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
         h = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
         print(f"[CAM] ✅ Camera {cam_id} OK ({w}x{h})")
+        print(f"[CAM] Frame test: shape={frame.shape}, size={frame.size}")
         return cam_id
     print("[CAM] ❌ KHÔNG TÌM THẤY CAMERA NÀO!")
     return -1
@@ -109,10 +108,19 @@ async def ws_handler(ws: WebSocket):
                 if l in counter and l!=last_label: last_label=l; counter[l]+=1; await ws.send_text(json.dumps({"counter":counter}))
         except asyncio.TimeoutError: pass
         
-        if paused or cap is None or not cap.isOpened(): await asyncio.sleep(0.1); continue
+        if paused: await asyncio.sleep(0.1); continue
+        if cap is None or not cap.isOpened():
+            await asyncio.sleep(0.5); continue
+        
         t0=time.time()
         r,frame=cap.read()
-        if not r: continue
+        if not r or frame is None:
+            if not hasattr(ws_handler, '_err_count'): ws_handler._err_count=0
+            ws_handler._err_count += 1
+            if ws_handler._err_count == 1:
+                print("[CAM] ⚠️  Không đọc được frame từ camera!")
+            await asyncio.sleep(0.1); continue
+        ws_handler._err_count = 0
         h,w=frame.shape[:2]; s=min(640/w,480/h,1.0)
         if s<1: frame=cv2.resize(frame,(int(w*s),int(h*s)))
         results=yolo_model(frame,verbose=False,conf=0.25,iou=0.45)
@@ -134,13 +142,10 @@ async def ws_handler(ws: WebSocket):
 if __name__ == "__main__":
     init_camera()
     init_arduino()
-    host = socket.gethostname()
-    ip = socket.gethostbyname(host)
+    ip = socket.gethostbyname(socket.gethostname())
     print(f"\n{'='*60}")
     print(f"  🚀  SERVER DA SAN SANG!")
     print(f"  📱  Mo trinh duyet tren LAPTOP:")
     print(f"      👉 http://{ip}:8080")
-    if host != ip:
-        print(f"      👉 http://{host}.local:8080")
     print(f"{'='*60}\n")
     uvicorn.run(app, host="0.0.0.0", port=8080, log_level="warning")
