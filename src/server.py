@@ -9,7 +9,6 @@ from pathlib import Path
 # === PHẢI ĐẶT TRƯỚC KHI IMPORT NUMPY/ULTRALYTICS ===
 # Fix "Illegal instruction" trên ARM Cortex-A72 (Pi 4)
 os.environ.setdefault('OPENBLAS_CORETYPE', 'ARMV8')
-os.environ.setdefault('NPY_DISABLE_CPU_FEATURES', 'ASIMD')
 os.environ.setdefault('OPENBLAS_NUM_THREADS', '2')
 os.environ.setdefault('OMP_NUM_THREADS', '2')
 

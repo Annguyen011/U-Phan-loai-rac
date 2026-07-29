@@ -24,21 +24,12 @@ echo "🌐 http://$MY_IP:8080"
 echo "🚀 Dang khoi dong..."
 echo ""
 
-# Fix lỗi Illegal instruction trên ARM (Pi 4)
-# Thử nhiều config cho ARM - Pi 4 dùng Cortex-A72
+# Fix lỗi Illegal instruction trên ARM (Pi 4 Cortex-A72)
+# ASIMD là baseline của ARMv8 → KHÔNG thể disable
 export OPENBLAS_CORETYPE=ARMV8
 export OPENBLAS_NUM_THREADS=2
 export OMP_NUM_THREADS=2
 export MKL_NUM_THREADS=2
-# Vô hiệu hóa tối ưu hóa CPU không tương thích
-export NPY_DISABLE_CPU_FEATURES="ASIMD"
-# Giảm số thread numpy để tránh crash
 export NUMEXPR_NUM_THREADS=2
-# Chạy với fallback mode nếu có lỗi
-python3 src/server.py 2>&1 || {
-    echo ""
-    echo "⚠️  Lỗi với ARMV8, thử ARMV7..."
-    export OPENBLAS_CORETYPE=ARMV7
-    export NPY_DISABLE_CPU_FEATURES=""
-    python3 src/server.py 2>&1
-}
+# Chạy server
+python3 src/server.py 2>&1
